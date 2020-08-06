@@ -1,0 +1,47 @@
+。/gcc -g -std=c11 -o instructorTests list.c instructorTests.c -Wall
+python3 ./markingTest.py ./instructorTests
+Linked List Marking Script
+
+Test function: testCreateListAfterFree (#33)
+ERROR: testCreateListAfterFree (@444): failed condition "List_create() != NULL"
+
+Test function: testAddAfterRemove (#38)
+ERROR: testAddAfterRemove (@476): failed condition "List_add(pList, &something) == 0"
+
+Test function: testInsertAfterRemove (#39)
+ERROR: testInsertAfterRemove (@484): failed condition "List_insert(pList, &something) == 0"
+
+Test function: testAppendAfterRemove (#40)
+ERROR: testAppendAfterRemove (@492): failed condition "List_append(pList, &something) == 0"
+
+Test function: testAddAfterFree (#41)
+ERROR: testAddAfterFree (@503): failed condition "List_add(pListNew, &something) == 0"
+
+Test function: testAddAfterTrim (#42)
+ERROR: testAddAfterTrim (@512): failed condition "List_add(pList, &something) == 0"
+
+Test function: testSearchOnFourFromBeforeList (#61)
+ERROR: testSearchOnFourFromBeforeList (@865): failed condition "List_search(pList, itemEquals, &itemOne) == &itemOne"
+
+Test function: testOnTwoTakeAllNodesFreeOddsReUseAll (#63)
+ERROR: testOnTwoTakeAllNodesFreeOddsReUseAll (@904): failed condition "List_append(pLists[0], &junkData) == 0"
+
+Test function: testOnTwoTakeAllNodesFreeEvensReUseAll (#64)
+ERROR: testOnTwoTakeAllNodesFreeEvensReUseAll (@932): failed condition "List_append(pLists[1], &junkData) == 0"
+
+Test function: testOnTwoTakeAllNodesFreeFirstHalfReUseAll (#65)
+ERROR: testOnTwoTakeAllNodesFreeFirstHalfReUseAll (@962): failed condition "List_append(pLists[1], &junkData) == 0"
+
+Test function: testOnTwoTakeAllNodesFreeSecondHalfReUseAll (#66)
+ERROR: testOnTwoTakeAllNodesFreeSecondHalfReUseAll (@992): failed condition "List_append(pLists[0], &junkData) == 0"
+
+Test function: testUseAllNodesFreeAllReuseAll (#67)
+ERROR: testUseAllNodesFreeAllReuseAll (@1017): failed condition "List_insert(pList, &junkData) == 0"
+
+Test function: testUseAllListsFreeFirstReuse (#68)
+ERROR: testUseAllListsFreeFirstReuse (@1039): failed condition "List_create() != NULL"
+
+Test function: testUseAllListsFreeSomeReuse (#69)
+ERROR: testUseAllListsFreeSomeReuse (@1061): failed condition "List_create() != NULL"
+
+
