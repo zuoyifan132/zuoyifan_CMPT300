@@ -17,26 +17,6 @@
 #define MAX_LEN 100
 typedef struct dirent** direntEntry;
 
-// Print current directory files and directories
-void print_no_option(char* dirname)
-{
-	DIR *dirPtr;
-	struct dirent *dp;
-	//char* dirname = ".";
- 
-	dirPtr = opendir(dirname);
-
-	// Open file fail
-	if(dirPtr == NULL){
-		fprintf(stderr,"Error! can not open %s\n",dirname);
-		exit(1);
-	}
-
-	while((dp = readdir(dirPtr)) != NULL)
-		if (filter(dp->d_name))
-			printf("%s\n",dp->d_name);
-	closedir(dirPtr);
-}
 
 // Print read/write/execute permission of file
 void print_permission(int st_mode)
@@ -93,6 +73,26 @@ int check_file_directory_invalid(char* path)
 	return -1;
 }
 
+// if path is softlink(return orginal file buf) otherwise return NULL
+char* identify_soft_link(char* path, char* buf)
+{
+	int link = readlink(path, buf, MAX_LEN-1);
+	buf[link] = '\0';
+
+	if((link < 0) || (link >= MAX_LEN-1)){
+		return NULL;
+	}
+
+	for (int i = link; i>= 0; i--){
+		if (buf[i] == '/'){
+			buf[i+1] = '\0';
+			break;
+		}
+	}
+
+	return buf;
+}
+
 // print the information based on file
 void print_info_base_on_file(char* path, _Bool i, _Bool l)
 {
@@ -133,7 +133,11 @@ void print_info_base_on_file(char* path, _Bool i, _Bool l)
 		printf("%s ", print_time);	
 	}
 	// print file or directoey name 
-	printf("%s\n",path);
+	char buf2[MAX_LEN];
+	if (identify_soft_link(path, buf2))
+		printf("%s -> %s\n", path, buf2);
+	else	
+		printf("%s\n",path);
 }
 
 // print the information based on ilR
@@ -178,8 +182,13 @@ void print_info_base_on_path(char* path, struct dirent* dp, _Bool i, _Bool l)
 			strftime(print_time, sizeof(print_time), "%b %2d %4Y %H:%M",time); 		
 			printf("%s ", print_time);	
 		}
+
 		// print file or directoey name 
-		printf("%s\n",dp->d_name);
+		char buf2[MAX_LEN];
+		if (identify_soft_link(path, buf2))
+			printf("%s -> %s\n", dp->d_name, buf2);
+		else	
+			printf("%s\n",dp->d_name);
 	}
 }
 
@@ -291,4 +300,30 @@ void print_with_option(_Bool i, _Bool l, _Bool R, char* path)
 		}
 		free(entryList);
 	}
+}
+
+// Print current directory files and directories
+void print_no_option(char* dirname)
+{
+	DIR *dirPtr;
+	struct dirent *dp;
+ 
+	dirPtr = opendir(dirname);
+
+	// Open file fail
+	if(dirPtr == NULL){
+		fprintf(stderr,"Error! can not open %s\n",dirname);
+		exit(1);
+	}
+
+	while((dp = readdir(dirPtr)) != NULL)
+		if (filter(dp->d_name)){
+			// print file or directoey name 
+			char buf2[MAX_LEN];
+			if (identify_soft_link(dp->d_name, buf2))
+				printf("%s -> %s\n", dp->d_name, buf2);
+			else	
+				printf("%s\n",dp->d_name);
+		}
+	closedir(dirPtr);
 }

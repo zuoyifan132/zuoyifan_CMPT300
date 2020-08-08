@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdbool.h>
+#include <fcntl.h>
 
 #include "print.h"
 #include "stringProcess.h"
