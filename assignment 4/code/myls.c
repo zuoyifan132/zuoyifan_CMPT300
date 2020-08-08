@@ -15,22 +15,15 @@
 
 
 int main(int argc, char** args)
-{
-	/*struct stat buf;
-	char path[1024] = "./test";
-	int error = lstat(path, &buf);
-	printf("error is: %d\n", error);
-	if (error < 0){
-		printf("stat failure\n");
-		exit(1);
-	}
-
-	printf("%7ld ", buf.st_ino);*/
+{	
+	// sort user input
+	sort_user_input(argc, args);
 
 	// Only one input, ls current directory
 	if (argc == 1){
 		char path[MAX_LEN] = ".";
 		print_no_option(path);
+		return 0;
 	}
 
 	int index = 1;
@@ -62,13 +55,68 @@ int main(int argc, char** args)
 		index++;
 	}
 
-	// determine file or directory
-	while (index < argc)
-	{		
+	// with option but no file list
+	if (index == argc)
+	{
 		// print the information based on input
-		print_with_option(i, l, R, args[index]);
+		print_with_option(i, l, R, ".");
+		return 0;
+	}
 
-		index++;
+	// more file list 
+	if (index < argc-1)
+	{
+		// determine file or directory
+		while (index < argc)
+		{	
+			// if args is directory
+			if (check_file_directory_invalid(args[index]) == 2){
+				//print root dir
+				if (R == false)
+					printf("%s:\n", args[index]);
+				// print the information based on input
+				print_with_option(i, l, R, args[index]);
+				//if (R == false && index < argc-1)
+				//	printf("h\n");
+				if (index < argc-1 && check_file_directory_invalid(args[index+1]) == 2)
+					printf("\n");
+			}
+
+			// if args is file 
+			else if (check_file_directory_invalid(args[index]) == 1){
+				print_info_base_on_file(args[index], i, l);
+				if (index < argc-1 && check_file_directory_invalid(args[index+1]) == 2)
+					printf("\n");
+			}
+
+			// if args is invalid 
+			else{
+				printf("invalid input\n");
+				exit(1);
+			}
+			index++;
+		}
+	}
+
+	// only one file list
+	else
+	{
+		// if args is directory
+		if (check_file_directory_invalid(args[index]) == 2){
+			// print the information based on input
+			print_with_option(i, l, R, args[index]);
+		}
+
+		// if args is file 
+		else if (check_file_directory_invalid(args[index]) == 1){
+			print_info_base_on_file(args[index], i, l);
+		}
+
+		// if args is invalid 
+		else{
+			printf("invalid input\n");
+			exit(1);
+		}
 	}
 
 	return 0;

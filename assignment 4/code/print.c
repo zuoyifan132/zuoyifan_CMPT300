@@ -76,13 +76,64 @@ void getAndPrintGroup(gid_t grpNum)
         printf("No group name for %u found\n", grpNum);
     }
 }
-
-// Get all entries of that directory
-direntEntry get_entry_list(char* path, int* count)
+	
+// directory(2) file(1) invalid(-1) 
+int check_file_directory_invalid(char* path)
 {
-	direntEntry entryList = (direntEntry) malloc(sizeof(direntEntry));
+	DIR *dir_ptr;
+	struct stat buf;
 
-	*count = scandir(path, &entryList, 0, alphasort);
+	if ((dir_ptr = opendir(path)) != NULL){
+		closedir(dir_ptr);
+		return 2;
+	}
+	if (stat(path, &buf) >= 0)
+		return 1;
+	closedir(dir_ptr);
+	return -1;
+}
+
+// print the information based on file
+void print_info_base_on_file(char* path, _Bool i, _Bool l)
+{
+	// Declare stat struct 
+	struct stat buf;
+	// Use to print time
+	struct tm *time;
+	char print_time[40];
+
+	// Get the file or directory name 
+	int error = stat(path, &buf);
+	//printf("dp name is: %s\n",dp->d_name);
+	// check stat failure
+	if (error < 0){
+		printf("print_info_base_on_path static error\n");
+		exit(1);
+	}
+
+	// if -i is true, print inode
+	if (i == true)
+		printf("%7ld ", buf.st_ino);
+
+	// if -l is true, print long information
+	if (l == true){
+		// print file permission
+		print_permission(buf.st_mode);
+		// print number of hard link
+		printf("%1ld ", buf.st_nlink);
+		// print user name 
+		getAndPrintUserName(buf.st_uid);
+		// print group name 
+		getAndPrintGroup(buf.st_gid);
+		// print file size
+		printf("%5ld ", buf.st_size);
+		// print last time file modified
+		time = localtime(&buf.st_mtime); 
+		strftime(print_time, sizeof(print_time), "%b %2d %4Y %H:%M",time); 		
+		printf("%s ", print_time);	
+	}
+	// print file or directoey name 
+	printf("%s\n",path);
 }
 
 // print the information based on ilR
@@ -138,6 +189,8 @@ void dfs_print(_Bool i, _Bool l, char* path)
 	struct dirent* dp;
 	struct stat buf;
 	direntEntry entryList;
+	char* dirList[1024];
+	int dirNum = 0;
 
 	// Scan the dir and sort it lexicographically using alphasort
 	int count = scandir(path, &entryList, 0, alphasort);
@@ -149,7 +202,7 @@ void dfs_print(_Bool i, _Bool l, char* path)
 	}
 
 	// Loop through all entries in the corresponding dir path
-	printf("\n%s:\n", path);
+	printf("%s:\n", path);
 	for(int k = 0; k < count; k++)
 	{	
 		dp = entryList[k];
@@ -161,7 +214,6 @@ void dfs_print(_Bool i, _Bool l, char* path)
         	snprintf(temp, sizeof(temp), "%s/%s", path, dp->d_name);
 
 		int error = stat(temp, &buf);
-		//printf("temp is: %s\n", temp);
 
 		// check stat failure
 		if (error < 0){
@@ -171,10 +223,11 @@ void dfs_print(_Bool i, _Bool l, char* path)
 
 		// if dp is a directory and is not hiden file, "." or ".." 
 		if (S_ISDIR(buf.st_mode) && filter(dp->d_name)){
-			char newPath[1024];
-			snprintf(newPath, sizeof(newPath), "%s/%s", path, dp->d_name);
+			char* newPath = (char*) malloc(1024*sizeof(char));
+			snprintf(newPath, 1024, "%s/%s", path, dp->d_name);
+			dirList[dirNum] = newPath;
+			dirNum++;
 			print_info_base_on_path(newPath, dp, i, l);
-			dfs_print(i, l, newPath);
 		}
 
 		// if dp is file and is not hiden file, "." or ".." 
@@ -183,7 +236,19 @@ void dfs_print(_Bool i, _Bool l, char* path)
 			snprintf(newPath, sizeof(newPath), "%s/%s", path, dp->d_name);
 			print_info_base_on_path(newPath, dp, i, l);
 		}
+
+		free(dp);
 	}
+
+	// recursive call
+	for (int p = 0; p < dirNum; p++){
+		printf("\n");
+		dfs_print(i, l, dirList[p]);
+	}
+
+	// clean up
+	for (int q = 0; q < dirNum; q++)
+		free(dirList[q]);
 	free(entryList);
 }
 
@@ -196,7 +261,6 @@ void print_with_option(_Bool i, _Bool l, _Bool R, char* path)
     char temp[1024];
 	char prefix[2] = "./";
 	snprintf(temp, sizeof(temp), "%s%s", prefix, path);
-
 	// Count number files and directories 
 	int count;
 	// entry lists contained in the specific path
@@ -223,6 +287,7 @@ void print_with_option(_Bool i, _Bool l, _Bool R, char* path)
 			char newPath[1024];
 			snprintf(newPath, sizeof(newPath), "%s/%s", path, dp->d_name);
 			print_info_base_on_path(newPath, dp, i, l);
+			free(dp);
 		}
 		free(entryList);
 	}
