@@ -11,12 +11,24 @@
 
 #include "print.h"
 #include "stringProcess.h"
+#include "maxLen.h"
 
 #define MAX_LEN 100
 
 
 int main(int argc, char** args)
 {	
+	// varible declare
+	int inode = 0;
+	int nlink = 0;
+	int uid = 0;
+	int gid = 0;
+	int size = 0;
+	int index = 1;
+	_Bool i = false;
+	_Bool l = false;
+	_Bool R = false;
+
 	// sort user input
 	sort_user_input(argc, args);
 
@@ -26,11 +38,6 @@ int main(int argc, char** args)
 		print_no_option(path);
 		return 0;
 	}
-
-	int index = 1;
-	_Bool i = false;
-	_Bool l = false;
-	_Bool R = false;
 
 	// determine ilR
 	while (index < argc)
@@ -59,15 +66,43 @@ int main(int argc, char** args)
 	// with option but no file list
 	if (index == argc)
 	{
-		// print the information based on input
-		print_with_option(i, l, R, ".");
-		return 0;
+		if (R == true){
+			recursive_maxLen(".", &inode, &nlink, &uid, &gid, &size);
+			print_with_option(i, l, R, ".", inode, nlink, uid, gid, size);
+		}
+		else{
+			not_recursive_maxLen(".", &inode, &nlink, &uid, &gid, &size);
+			print_with_option(i, l, R, ".", inode, nlink, uid, gid, size);
+		}
 	}
 
 	// more file list 
-	if (index < argc-1)
-	{
-		// determine file or directory
+	else if (index < argc-1)
+	{	
+		// determine max len of file and directory
+		int tempindex = index;
+		while (tempindex < argc)
+		{
+			// directory
+			if (check_file_directory_invalid(args[tempindex]) == 2){
+				if (R == true)
+					recursive_maxLen(args[tempindex], &inode, &nlink, &uid, &gid, &size);
+				else
+					not_recursive_maxLen(args[tempindex], &inode, &nlink, &uid, &gid, &size);
+			}
+			// file
+			else if (check_file_directory_invalid(args[tempindex]) == 1){
+				file_maxLen(args[tempindex], &inode, &nlink, &uid, &gid, &size);
+			}
+			// if args is invalid 
+			else{
+				printf("invalid input\n");
+				exit(1);
+			}
+			tempindex++;
+		}
+
+		// print file or directory
 		while (index < argc)
 		{	
 			// if args is directory
@@ -76,16 +111,14 @@ int main(int argc, char** args)
 				if (R == false)
 					printf("%s:\n", args[index]);
 				// print the information based on input
-				print_with_option(i, l, R, args[index]);
-				//if (R == false && index < argc-1)
-				//	printf("h\n");
+				print_with_option(i, l, R, args[index], inode, nlink, uid, gid, size);
 				if (index < argc-1 && check_file_directory_invalid(args[index+1]) == 2)
 					printf("\n");
 			}
 
 			// if args is file 
 			else if (check_file_directory_invalid(args[index]) == 1){
-				print_info_base_on_file(args[index], i, l);
+				print_info_base_on_file(args[index], i, l, inode, nlink, uid, gid, size);
 				if (index < argc-1 && check_file_directory_invalid(args[index+1]) == 2)
 					printf("\n");
 			}
@@ -104,13 +137,18 @@ int main(int argc, char** args)
 	{
 		// if args is directory
 		if (check_file_directory_invalid(args[index]) == 2){
-			// print the information based on input
-			print_with_option(i, l, R, args[index]);
+			if (R == true)
+				recursive_maxLen(args[index], &inode, &nlink, &uid, &gid, &size);
+			else
+				not_recursive_maxLen(args[index], &inode, &nlink, &uid, &gid, &size);
+
+			print_with_option(i, l, R, args[index], inode, nlink, uid, gid, size);
 		}
 
 		// if args is file 
 		else if (check_file_directory_invalid(args[index]) == 1){
-			print_info_base_on_file(args[index], i, l);
+			file_maxLen(args[index], &inode, &nlink, &uid, &gid, &size);
+			print_info_base_on_file(args[index], i, l, inode, nlink, uid, gid, size);
 		}
 
 		// if args is invalid 

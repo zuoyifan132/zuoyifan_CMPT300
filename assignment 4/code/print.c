@@ -34,24 +34,24 @@ void print_permission(int st_mode)
 }
 
 // Get User name by UID
-void getAndPrintUserName(uid_t uid)
+void getAndPrintUserName(uid_t uidNum, int uid)
 {
-    struct passwd *pw = getpwuid(uid);
+    struct passwd *pw = getpwuid(uidNum);
 
     if (pw) {
-        printf("%9s ", pw->pw_name);
+    	printf("%*s ", uid, pw->pw_name);
     } else {
-        printf("No name found for %u\n", uid);
+        printf("No name found for %u\n", uidNum);
     }
 }
 
 // Get group name by GID
-void getAndPrintGroup(gid_t grpNum)
+void getAndPrintGroup(gid_t grpNum, int gid)
 {
     struct group *grp = getgrgid(grpNum);
 
     if (grp) {
-        printf("%9s ", grp->gr_name);
+    	printf("%*s ", gid, grp->gr_name);
     } else {
         printf("No group name for %u found\n", grpNum);
     }
@@ -94,7 +94,7 @@ char* identify_soft_link(char* path, char* buf)
 }
 
 // print the information based on file
-void print_info_base_on_file(char* path, _Bool i, _Bool l)
+void print_info_base_on_file(char* path, _Bool i, _Bool l, int inode, int nlink, int uid, int gid, int size)
 {
 	// Declare stat struct 
 	struct stat buf;
@@ -104,7 +104,7 @@ void print_info_base_on_file(char* path, _Bool i, _Bool l)
 
 	// Get the file or directory name 
 	int error = lstat(path, &buf);
-	//printf("dp name is: %s\n",dp->d_name);
+
 	// check stat failure
 	if (error < 0){
 		printf("print_info_base_on_path static error\n");
@@ -113,20 +113,20 @@ void print_info_base_on_file(char* path, _Bool i, _Bool l)
 
 	// if -i is true, print inode
 	if (i == true)
-		printf("%7ld ", buf.st_ino);
+		printf("%*ld ", inode, buf.st_ino);
 
 	// if -l is true, print long information
 	if (l == true){
 		// print file permission
 		print_permission(buf.st_mode);
 		// print number of hard link
-		printf("%1ld ", buf.st_nlink);
+		printf("%*ld ", nlink, buf.st_nlink);
 		// print user name 
-		getAndPrintUserName(buf.st_uid);
+		getAndPrintUserName(buf.st_uid, uid);
 		// print group name 
-		getAndPrintGroup(buf.st_gid);
+		getAndPrintGroup(buf.st_gid, gid);
 		// print file size
-		printf("%5ld ", buf.st_size);
+		printf("%*ld ", size, buf.st_size);
 		// print last time file modified
 		time = localtime(&buf.st_mtime); 
 		strftime(print_time, sizeof(print_time), "%b %2d %4Y %H:%M",time); 		
@@ -141,7 +141,7 @@ void print_info_base_on_file(char* path, _Bool i, _Bool l)
 }
 
 // print the information based on ilR
-void print_info_base_on_path(char* path, struct dirent* dp, _Bool i, _Bool l)
+void print_info_base_on_path(char* path, struct dirent* dp, _Bool i, _Bool l, int inode, int nlink, int uid, int gid, int size)
 {
 	// Declare stat struct 
 	struct stat buf;
@@ -151,7 +151,7 @@ void print_info_base_on_path(char* path, struct dirent* dp, _Bool i, _Bool l)
 
 	// Get the fiel or directory name 
 	int error = lstat(path, &buf);
-	//printf("dp name is: %s\n",dp->d_name);
+
 	// check stat failure
 	if (error < 0){
 		printf("print_info_base_on_path static error\n");
@@ -163,27 +163,27 @@ void print_info_base_on_path(char* path, struct dirent* dp, _Bool i, _Bool l)
 	{
 		// if -i is true, print inode
 		if (i == true)
-			printf("%7ld ", buf.st_ino);
+			printf("%*ld ", inode, buf.st_ino);
 
 		// if -l is true, print long information
 		if (l == true){
 			// print file permission
 			print_permission(buf.st_mode);
 			// print number of hard link
-			printf("%1ld ", buf.st_nlink);
+			printf("%*ld ", nlink, buf.st_nlink);
 			// print user name 
-			getAndPrintUserName(buf.st_uid);
+			getAndPrintUserName(buf.st_uid, uid);
 			// print group name 
-			getAndPrintGroup(buf.st_gid);
+			getAndPrintGroup(buf.st_gid, gid);
 			// print file size
-			printf("%5ld ", buf.st_size);
+			printf("%*ld ", size, buf.st_size);
 			// print last time file modified
 			time = localtime(&buf.st_mtime); 
 			strftime(print_time, sizeof(print_time), "%b %2d %4Y %H:%M",time); 		
-			printf("%s ", print_time);	
+			printf("%s ", print_time);
 		}
 
-		// print file or directoey name 
+		// print file or directory name 
 		char buf2[MAX_LEN];
 		if (identify_soft_link(path, buf2))
 			printf("%s -> %s\n", dp->d_name, buf2);
@@ -193,7 +193,7 @@ void print_info_base_on_path(char* path, struct dirent* dp, _Bool i, _Bool l)
 }
 
 // DFS for recursively print
-void dfs_print(_Bool i, _Bool l, char* path)
+void dfs_print(_Bool i, _Bool l, char* path, int inode, int nlink, int uid, int gid, int size)
 {	
 	struct dirent* dp;
 	struct stat buf;
@@ -236,14 +236,14 @@ void dfs_print(_Bool i, _Bool l, char* path)
 			snprintf(newPath, 1024, "%s/%s", path, dp->d_name);
 			dirList[dirNum] = newPath;
 			dirNum++;
-			print_info_base_on_path(newPath, dp, i, l);
+			print_info_base_on_path(newPath, dp, i, l, inode, nlink, uid, gid, size);
 		}
 
 		// if dp is file and is not hiden file, "." or ".." 
 		else if (!S_ISDIR(buf.st_mode) && filter(dp->d_name)){
 			char newPath[1024];
 			snprintf(newPath, sizeof(newPath), "%s/%s", path, dp->d_name);
-			print_info_base_on_path(newPath, dp, i, l);
+			print_info_base_on_path(newPath, dp, i, l, inode, nlink, uid, gid, size);
 		}
 
 		free(dp);
@@ -252,7 +252,7 @@ void dfs_print(_Bool i, _Bool l, char* path)
 	// recursive call
 	for (int p = 0; p < dirNum; p++){
 		printf("\n");
-		dfs_print(i, l, dirList[p]);
+		dfs_print(i, l, dirList[p], inode, nlink, uid, gid, size);
 	}
 
 	// clean up
@@ -262,14 +262,9 @@ void dfs_print(_Bool i, _Bool l, char* path)
 }
 
 // Check if option conatin i or l or R and print base on the corresponding option
-void print_with_option(_Bool i, _Bool l, _Bool R, char* path)
+void print_with_option(_Bool i, _Bool l, _Bool R, char* path, int inode, int nlink, int uid, int gid, int size)
 {
 	struct dirent* dp;
-
-	// process the path
-    char temp[1024];
-	char prefix[2] = "./";
-	snprintf(temp, sizeof(temp), "%s%s", prefix, path);
 	// Count number files and directories 
 	int count;
 	// entry lists contained in the specific path
@@ -277,7 +272,7 @@ void print_with_option(_Bool i, _Bool l, _Bool R, char* path)
 
 	// List subdirectories recursively
 	if (R == true)
-		dfs_print(i, l, path);
+		dfs_print(i, l, path, inode, nlink, uid, gid, size);
 
 	else{
 		// Scan the dir and sort it lexicographically using alphasort
@@ -295,7 +290,7 @@ void print_with_option(_Bool i, _Bool l, _Bool R, char* path)
 			dp = entryList[k];
 			char newPath[1024];
 			snprintf(newPath, sizeof(newPath), "%s/%s", path, dp->d_name);
-			print_info_base_on_path(newPath, dp, i, l);
+			print_info_base_on_path(newPath, dp, i, l, inode, nlink, uid, gid, size);
 			free(dp);
 		}
 		free(entryList);
