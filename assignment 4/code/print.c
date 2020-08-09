@@ -103,7 +103,7 @@ void print_info_base_on_file(char* path, _Bool i, _Bool l)
 	char print_time[40];
 
 	// Get the file or directory name 
-	int error = stat(path, &buf);
+	int error = lstat(path, &buf);
 	//printf("dp name is: %s\n",dp->d_name);
 	// check stat failure
 	if (error < 0){
@@ -150,7 +150,7 @@ void print_info_base_on_path(char* path, struct dirent* dp, _Bool i, _Bool l)
 	char print_time[40];
 
 	// Get the fiel or directory name 
-	int error = stat(path, &buf);
+	int error = lstat(path, &buf);
 	//printf("dp name is: %s\n",dp->d_name);
 	// check stat failure
 	if (error < 0){
@@ -222,7 +222,7 @@ void dfs_print(_Bool i, _Bool l, char* path)
     	else
         	snprintf(temp, sizeof(temp), "%s/%s", path, dp->d_name);
 
-		int error = stat(temp, &buf);
+		int error = lstat(temp, &buf);
 
 		// check stat failure
 		if (error < 0){
